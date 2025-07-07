@@ -1,1 +1,233 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+/* Root styles */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f7fa;
+  color: #333;
+}
+
+/* Dark mode support */
+.dark {
+  background-color: #121212;
+  color: #f5f5f5;
+}
+
+/* Chat container */
+.chat-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header */
+.header {
+  position: relative;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+/* Title centered */
+.chat-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #000;
+  display: inline-block;
+  margin: 0 auto;
+  font-family: "Poppins", sans-serif;
+}
+
+/* Dark mode button top-right */
+.dark-mode-toggle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #eee;
+  cursor: pointer;
+}
+
+
+/* Subtitle */
+.chat-subtitle {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 16px;
+  color: #666;
+}
+
+/* Chat box and messages */
+.chat-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* Message layout */
+.chat-message {
+  display: flex;
+  align-items: flex-start;
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Avatar image */
+.avatar {
+  width: 40px;
+  height: 40px;
+  margin-right: 12px;
+}
+
+/* Message bubble */
+.message-content {
+  background: #e6f0ff;
+  padding: 12px 16px;
+  border-radius: 12px;
+  max-width: 100%;
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Feedback buttons */
+.feedback {
+  margin-top: 8px;
+}
+
+.feedback button {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.thank-you {
+  font-size: 14px;
+  color: green;
+  margin-top: 4px;
+}
+
+/* Speak button */
+.speak-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  margin-top: 6px;
+  font-size: 20px;
+}
+
+.speak-btn.speaking {
+  animation: pulse 1s infinite;
+}
+
+/* Pulse animation for speaking */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Input section */
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+  gap: 8px;
+}
+
+/* Edit button on left */
+.edit-left {
+  flex-shrink: 0;
+}
+
+.edit-left button {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: #fff;
+  cursor: pointer;
+}
+
+/* Input + buttons */
+.chat-input-area {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+}
+
+.chat-input-area input {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+/* Send and Mic Buttons */
+.chat-input-area button {
+  padding: 10px 14px;
+  font-size: 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.chat-input-area button:first-of-type {
+  background: #007bff;
+  color: #fff;
+}
+
+.mic-button {
+  background: #333;
+  color: #fff;
+}
+
+.mic-button.listening {
+  background: #e91e63;
+}
+
+/* Chat actions: Clear & Export */
+.chat-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  gap: 8px;
+}
+
+.chat-actions button {
+  flex: 1;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+}
+
+.chat-actions button:first-child {
+  background-color: #f44336;
+  color: #fff;
+}
+
+.chat-actions button:last-child {
+  background-color: #9c27b0;
+  color: #fff;
+}
+
+/* Disclaimer */
+.chat-disclaimer {
+  font-size: 13px;
+  color: #777;
+  text-align: center;
+  margin-top: 16px;
+}
