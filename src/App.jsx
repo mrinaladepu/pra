@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
+import Login from "./Login";
 import axios from "axios";
-import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 import { jsPDF } from "jspdf";
+import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 import "./App.css";
 
 function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: "assistant",
@@ -13,38 +15,81 @@ function App() {
     },
   ]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const [lastUserMessage, setLastUserMessage] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
+  const [listening, setListening] = useState(false);
+  const [speakingIndex, setSpeakingIndex] = useState(null);
+  const [feedbackGiven, setFeedbackGiven] = useState({});
+  const { transcript, resetTranscript, listening: micListening } = useSpeechRecognition();
 
-  const { transcript, listening, resetTranscript } = useSpeechRecognition();
+  useEffect(() => {
+    if (!micListening && transcript) {
+      setInput(transcript);
+    }
+  }, [micListening, transcript]);
+
+  if (!isLoggedIn) {
+    return <Login onLogin={() => setIsLoggedIn(true)} />;
+  }
+
+  const toggleDarkMode = () => setDarkMode(!darkMode);
+
+  const speak = (text, index) => {
+    if (speakingIndex === index) {
+      window.speechSynthesis.cancel();
+      setSpeakingIndex(null);
+      return;
+    }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onend = () => setSpeakingIndex(null);
+    window.speechSynthesis.speak(utterance);
+    setSpeakingIndex(index);
+  };
+
+  const isHealthRelated = (text) => {
+    const keywords = [
+      "health", "doctor", "medical", "medicine", "treatment", "diagnosis", "hospital", "clinic",
+      "fever", "cold", "cough", "headache", "pain", "infection", "symptom", "disease", "flu", "covid",
+      "cancer", "asthma", "vomit", "nausea", "diarrhea", "malaria", "dengue", "bp", "blood pressure",
+      "diabetes", "tablet", "medication", "antibiotic", "surgery", "injury", "fracture", "strain",
+      "stomach", "skin", "rash", "itch", "chest", "body", "wound", "burn", "bone", "muscle", "joint",
+      "eye", "ear", "nose", "throat", "leg", "arm", "hand", "back", "neck", "hip", "knee", "shoulder",
+      "foot", "feet", "tooth", "teeth", "gum", "spine", "rib", "pelvis", "ankle", "elbow",
+      "swelling", "fatigue", "weakness", "urine", "heartbeat", "period", "pregnancy", "mental",
+      "stress", "anxiety", "depression", "allergy", "dizzy", "blurred vision", "cramp"
+    ];
+    const lower = text.toLowerCase();
+    return keywords.some((keyword) => lower.includes(keyword));
+  };
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMsg = { role: "user", content: input };
-    const updatedMessages = [...messages, userMsg];
-    setMessages(updatedMessages);
+    const userMessage = { role: "user", content: input };
+    setMessages((prev) => [...prev, userMessage]);
     setLastUserMessage(input);
     setInput("");
-    setLoading(true);
+
+    if (!isHealthRelated(input)) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "⚠️ I am only able to help with health-related queries. Please ask a medical or body-related question.",
+        },
+      ]);
+      return;
+    }
 
     const chatHistory = [
       {
         role: "system",
-        content: `You are a helpful medical assistant. 
-Always provide medically accurate and ethical responses. 
-If unsure, say so. Never give prescriptions.
-
-🔹 When explaining steps or tips, always present them as **numbered or bullet points**, not in paragraphs.
-
-🔹 Use formatting like bold headings, line breaks, and short sentences to improve clarity.
-
-🔹 End every answer with a friendly reminder and a medical disclaimer.`,
+        content:
+          "You are a helpful medical assistant. Provide ethical, accurate responses. Do not prescribe medicine. Use bullet points when explaining.",
       },
-      ...updatedMessages.map((msg) => ({
-        role: msg.role === "bot" || msg.role === "assistant" ? "assistant" : "user",
-        content: msg.content,
-      })),
+      ...messages,
+      userMessage,
     ];
 
     try {
@@ -66,33 +111,26 @@ If unsure, say so. Never give prescriptions.
       const reply =
         res.data.choices[0].message.content +
         "\n\n⚠️ This is general information. Consult a licensed doctor for medical advice.";
-
-      setMessages([...updatedMessages, { role: "assistant", content: reply }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch (err) {
-      console.error("Error talking to Groq:", err);
-      setMessages([
-        ...updatedMessages,
-        {
-          role: "assistant",
-          content:
-            "❌ Sorry, there was a problem connecting to the medical assistant. Please try again later.",
-        },
+      console.error("Error:", err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "❌ Failed to get response. Please try again." },
       ]);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleSpeechInput = () => {
+  const handleMicClick = () => {
     resetTranscript();
+    setListening(true);
     SpeechRecognition.startListening({ continuous: false, language: "en-US" });
   };
 
-  useEffect(() => {
-    if (!listening && transcript) {
-      setInput(transcript);
-    }
-  }, [listening, transcript]);
+  const handleStopMic = () => {
+    SpeechRecognition.stopListening();
+    setListening(false);
+  };
 
   const handleRegenerate = () => {
     if (lastUserMessage) {
@@ -100,7 +138,18 @@ If unsure, say so. Never give prescriptions.
     }
   };
 
-  const handleClearChat = () => {
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    let y = 10;
+    messages.forEach((msg) => {
+      const prefix = msg.role === "user" ? "You: " : "Bot: ";
+      doc.text(`${prefix}${msg.content}`, 10, y);
+      y += 10;
+    });
+    doc.save("chat.pdf");
+  };
+
+  const handleClear = () => {
     setMessages([
       {
         role: "assistant",
@@ -109,59 +158,85 @@ If unsure, say so. Never give prescriptions.
       },
     ]);
     setInput("");
+    setFeedbackGiven({});
     setLastUserMessage("");
   };
 
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    let y = 10;
-
-    messages.forEach((msg) => {
-      const label = msg.role === "user" ? "You: " : "Bot: ";
-      const lines = doc.splitTextToSize(label + msg.content, 180);
-      doc.text(lines, 10, y);
-      y += lines.length * 10;
-    });
-
-    doc.save("chat.pdf");
+  const handleFeedback = (index) => {
+    setFeedbackGiven((prev) => ({ ...prev, [index]: true }));
   };
 
   return (
-    <div className="chat-container">
-      <h1 className="chat-title">👩‍⚕️ MediCare Assistant</h1>
+    <div className={`chat-container ${darkMode ? "dark" : ""}`}>
+      <div className="header">
+        <h1 className="chat-title ">👩‍⚕️ MediCare Assistant</h1>
+        <button className="dark-mode-toggle" onClick={toggleDarkMode}>
+          {darkMode ? "☀️ Light" : "🌙 Dark"}
+        </button>
+      </div>
+
       <p className="chat-subtitle">Ask health questions and get ethical, accurate guidance.</p>
 
       <div className="chat-box">
         {messages.map((msg, index) => (
           <div key={index} className={`chat-message ${msg.role}`}>
-            <div className="message-content">{msg.content}</div>
-            {msg.role === "assistant" && (
-              <div className="feedback">
-                <span role="img" aria-label="like">👍</span>
-                <span role="img" aria-label="dislike">👎</span>
-              </div>
-            )}
+            <img
+              className={`avatar ${msg.role === "user" ? "user-avatar" : "bot-avatar"}`}
+              src={msg.role === "user" ? "user-avatar.png" : "bot-avatar.png"}
+              alt="avatar"
+            />
+            <div className="message-content">
+              {msg.content}
+              {msg.role === "assistant" && index !== 0 && (
+                <div className="feedback">
+                  {!feedbackGiven[index] ? (
+                    <>
+                      <button onClick={() => handleFeedback(index)}>👍</button>
+                      <button onClick={() => handleFeedback(index)}>👎</button>
+                    </>
+                  ) : (
+                    <div className="thank-you">Thanks for the feedback!</div>
+                  )}
+                </div>
+              )}
+              {msg.role === "assistant" && (
+                <button
+                  className={`speak-btn ${speakingIndex === index ? "speaking" : ""}`}
+                  onClick={() => speak(msg.content, index)}
+                >
+                  🔊
+                </button>
+              )}
+            </div>
           </div>
         ))}
-        {loading && <div className="chat-message assistant">Typing...</div>}
       </div>
 
-      <div className="chat-input-area">
-        <input
-          type="text"
-          placeholder="Type or speak your question..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSend()}
-        />
-        <button onClick={handleSend}>Send</button>
-        <button onClick={handleSpeechInput}>🎤</button>
+      <div className="input-wrapper">
+        <div className="edit-left">
+          <button onClick={handleRegenerate}>✏️ Edit</button>
+        </div>
+
+        <div className="chat-input-area">
+          <input
+            type="text"
+            placeholder="Ask your medical question..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+          />
+          <button onClick={handleSend}>➤</button>
+          <button
+            onClick={listening ? handleStopMic : handleMicClick}
+            className={`mic-button ${micListening ? "listening" : ""}`}
+          >
+            🎤
+          </button>
+        </div>
       </div>
 
       <div className="chat-actions">
-        <button onClick={handleRegenerate}>🔄 Regenerate</button>
-        <button onClick={handleClearChat}>🧹 Clear Chat</button>
-        <button onClick={handleExportPDF}>📄 Export to PDF</button>
+        <button onClick={handleClear}>🧹 Clear</button>
+        <button onClick={handleExportPDF}>📄 Export PDF</button>
       </div>
 
       <p className="chat-disclaimer">
