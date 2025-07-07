@@ -7,7 +7,7 @@ import "./App.css";
 function App() {
   const [messages, setMessages] = useState([
     {
-      role: "bot",
+      role: "assistant",
       content:
         "👩‍⚕️ Hello! I am your Health Assistance Bot. How can I help you today with your health-related concern?",
     },
@@ -41,7 +41,10 @@ If unsure, say so. Never give prescriptions.
 
 🔹 End every answer with a friendly reminder and a medical disclaimer.`,
       },
-      ...updatedMessages,
+      ...updatedMessages.map((msg) => ({
+        role: msg.role === "bot" || msg.role === "assistant" ? "assistant" : "user",
+        content: msg.content,
+      })),
     ];
 
     try {
@@ -54,7 +57,7 @@ If unsure, say so. Never give prescriptions.
         },
         {
           headers: {
-            Authorization: `Bearer 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`,
+            Authorization: `Bearer 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`,
             "Content-Type": "application/json",
           },
         }
@@ -64,15 +67,15 @@ If unsure, say so. Never give prescriptions.
         res.data.choices[0].message.content +
         "\n\n⚠️ This is general information. Consult a licensed doctor for medical advice.";
 
-      setMessages([...updatedMessages, { role: "bot", content: reply }]);
+      setMessages([...updatedMessages, { role: "assistant", content: reply }]);
     } catch (err) {
       console.error("Error talking to Groq:", err);
       setMessages([
         ...updatedMessages,
         {
-          role: "bot",
+          role: "assistant",
           content:
-            "Sorry, there was a problem connecting to the medical assistant. Please try again later.",
+            "❌ Sorry, there was a problem connecting to the medical assistant. Please try again later.",
         },
       ]);
     } finally {
@@ -100,7 +103,7 @@ If unsure, say so. Never give prescriptions.
   const handleClearChat = () => {
     setMessages([
       {
-        role: "bot",
+        role: "assistant",
         content:
           "👩‍⚕️ Hello! I am your Health Assistance Bot. How can I help you today with your health-related concern?",
       },
@@ -132,7 +135,7 @@ If unsure, say so. Never give prescriptions.
         {messages.map((msg, index) => (
           <div key={index} className={`chat-message ${msg.role}`}>
             <div className="message-content">{msg.content}</div>
-            {msg.role === "bot" && (
+            {msg.role === "assistant" && (
               <div className="feedback">
                 <span role="img" aria-label="like">👍</span>
                 <span role="img" aria-label="dislike">👎</span>
@@ -140,7 +143,7 @@ If unsure, say so. Never give prescriptions.
             )}
           </div>
         ))}
-        {loading && <div className="chat-message bot">Typing...</div>}
+        {loading && <div className="chat-message assistant">Typing...</div>}
       </div>
 
       <div className="chat-input-area">
