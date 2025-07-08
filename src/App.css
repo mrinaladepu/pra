@@ -38,6 +38,10 @@ body {
   font-family: "Poppins", sans-serif;
 }
 
+.dark .chat-title {
+  color: #f5f5f5;
+}
+
 /* Dark mode button top-right */
 .dark-mode-toggle {
   position: absolute;
@@ -50,6 +54,10 @@ body {
   cursor: pointer;
 }
 
+.dark .dark-mode-toggle {
+  background-color: #333;
+  color: #f5f5f5;
+}
 
 /* Subtitle */
 .chat-subtitle {
@@ -57,6 +65,10 @@ body {
   margin-bottom: 20px;
   font-size: 16px;
   color: #666;
+}
+
+.dark .chat-subtitle {
+  color: #bbb;
 }
 
 /* Chat box and messages */
@@ -67,6 +79,14 @@ body {
   padding: 16px;
   max-height: 60vh;
   overflow-y: auto;
+  background-color: #fff;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+}
+
+.dark .chat-box {
+  background-color: #1e1e1e;
+  border-color: #444;
 }
 
 /* Message layout */
@@ -81,11 +101,17 @@ body {
   box-sizing: border-box;
 }
 
+.dark .chat-message {
+  background: #2a2a2a;
+  border-color: #555;
+}
+
 /* Avatar image */
 .avatar {
   width: 40px;
   height: 40px;
   margin-right: 12px;
+  border-radius: 50%;
 }
 
 /* Message bubble */
@@ -96,11 +122,34 @@ body {
   max-width: 100%;
   flex: 1;
   word-break: break-word;
+  line-height: 1.5;
+}
+
+.dark .message-content {
+  background: #3a3a3a;
+  color: #f5f5f5;
+}
+
+/* Styling for structured content (e.g., lists, appointment details) */
+.message-content ul,
+.message-content li {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.message-content strong {
+  color: #007bff;
+}
+
+.dark .message-content strong {
+  color: #4dabf7;
 }
 
 /* Feedback buttons */
 .feedback {
   margin-top: 8px;
+  display: flex;
+  gap: 8px;
 }
 
 .feedback button {
@@ -108,13 +157,21 @@ body {
   border: none;
   font-size: 20px;
   cursor: pointer;
-  margin-right: 8px;
+  transition: transform 0.2s;
+}
+
+.feedback button:hover {
+  transform: scale(1.2);
 }
 
 .thank-you {
   font-size: 14px;
-  color: green;
+  color: #4caf50;
   margin-top: 4px;
+}
+
+.dark .thank-you {
+  color: #81c784;
 }
 
 /* Speak button */
@@ -124,6 +181,11 @@ body {
   cursor: pointer;
   margin-top: 6px;
   font-size: 20px;
+  transition: transform 0.2s;
+}
+
+.speak-btn:hover {
+  transform: scale(1.2);
 }
 
 .speak-btn.speaking {
@@ -156,6 +218,21 @@ body {
   border: 1px solid #ccc;
   background: #fff;
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dark .edit-left button {
+  background: #333;
+  border-color: #555;
+  color: #f5f5f5;
+}
+
+.edit-left button:hover {
+  background-color: #f0f0f0;
+}
+
+.dark .edit-left button:hover {
+  background-color: #444;
 }
 
 /* Input + buttons */
@@ -174,6 +251,12 @@ body {
   border-radius: 6px;
 }
 
+.dark .chat-input-area input {
+  background: #2a2a2a;
+  border-color: #555;
+  color: #f5f5f5;
+}
+
 /* Send and Mic Buttons */
 .chat-input-area button {
   padding: 10px 14px;
@@ -181,6 +264,7 @@ body {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .chat-input-area button:first-of-type {
@@ -188,13 +272,25 @@ body {
   color: #fff;
 }
 
+.chat-input-area button:first-of-type:hover {
+  background: #0056b3;
+}
+
 .mic-button {
   background: #333;
   color: #fff;
 }
 
+.mic-button:hover {
+  background: #555;
+}
+
 .mic-button.listening {
   background: #e91e63;
+}
+
+.mic-button.listening:hover {
+  background: #c2185b;
 }
 
 /* Chat actions: Clear & Export */
@@ -212,6 +308,7 @@ body {
   border-radius: 6px;
   cursor: pointer;
   border: none;
+  transition: background-color 0.2s;
 }
 
 .chat-actions button:first-child {
@@ -219,9 +316,17 @@ body {
   color: #fff;
 }
 
+.chat-actions button:first-child:hover {
+  background-color: #d32f2f;
+}
+
 .chat-actions button:last-child {
   background-color: #9c27b0;
   color: #fff;
+}
+
+.chat-actions button:last-child:hover {
+  background-color: #7b1fa2;
 }
 
 /* Disclaimer */
@@ -230,4 +335,45 @@ body {
   color: #777;
   text-align: center;
   margin-top: 16px;
+}
+
+.dark .chat-disclaimer {
+  color: #aaa;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 600px) {
+  .chat-container {
+    padding: 10px;
+  }
+
+  .chat-title {
+    font-size: 24px;
+  }
+
+  .chat-box {
+    max-height: 50vh;
+  }
+
+  .chat-message {
+    padding: 12px;
+  }
+
+  .avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .message-content {
+    font-size: 14px;
+  }
+
+  .chat-input-area input {
+    font-size: 14px;
+  }
+
+  .chat-actions button {
+    font-size: 14px;
+    padding: 8px;
+  }
 }
