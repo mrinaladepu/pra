@@ -1,0 +1,84 @@
+
+.login-page * {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+/* Login page background */
+.login-page {
+  background-image: url('login.jpg'); 
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Login form container */
+.login-page .login-container {
+  background-color: #fff;
+  padding: 30px 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 300px;
+  text-align: center;
+}
+
+/* Login heading */
+.login-page h2 {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Form labels */
+.login-page label {
+  display: block;
+  text-align: left;
+  margin: 10px 0 5px;
+  color: #555;
+}
+
+/* Email/password input */
+.login-page input[type="email"],
+.login-page input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Buttons */
+.login-page button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #235adb;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.login-page button:hover {
+  background-color: #1376ee;
+}
+
+/* Subtitle under form */
+.login-page h5 {
+  margin: 10px 0;
+  font-weight: normal;
+  color: #666;
+}
+
+/* Error message */
+.login-page #message {
+  margin-top: 15px;
+  color: red;
+  font-size: 0.9em;
+}

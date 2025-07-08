@@ -1,6 +1,11 @@
+
+
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
+// Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyCo8mk4Jk69FtZOglGaYZLjEJJwKztcUZ0",
   authDomain: "medicalchatbot-40312.firebaseapp.com",
@@ -10,7 +15,11 @@ const firebaseConfig = {
   appId: "1:462810332921:web:9b3a28a42cc1b9f8216c28"
 };
 
+// Initialize Firebase services
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
 
-export { auth };
+//Export Firebase services
+export { auth, db, storage };

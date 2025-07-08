@@ -1,37 +1,77 @@
 import React, { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "./firebase"; // Firebase config
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import "./fire.css";
+import { auth } from "./firebase"; 
+
+
 
 function Login({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
+    setError("");
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      onLogin();
+      if (onLogin) onLogin(); // optional callback
     } catch (err) {
       setError("Invalid email or password");
     }
   };
 
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      if (onLogin) onLogin(); // optional callback
+    } catch (err) {
+      setError(err.message || "Signup failed");
+    }
+  };
+
   return (
-    <div style={{ maxWidth: 350, margin: "100px auto", padding: 24, border: "1px solid #ddd", borderRadius: 8, background: "#fff" }}>
-      <h2 style={{ textAlign: "center" }}>Login to HealthMate</h2>
-      <form onSubmit={handleSubmit}>
-        <label>Email</label>
-        <input type="email" value={email} onChange={e => setEmail(e.target.value)} required style={{ width: "100%", padding: 8, marginBottom: 16 }} />
-        <label>Password</label>
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} required style={{ width: "100%", padding: 8, marginBottom: 16 }} />
-        {error && <div style={{ color: "red", marginBottom: 12 }}>{error}</div>}
-        <button type="submit" style={{ width: "100%", padding: 10, background: "#1976d2", color: "#fff", border: "none", borderRadius: 4 }}>
-          Login
-        </button>
-      </form>
-    </div>
-  );
+  <div className="login-page">
+  <div className="login-container">
+    <h2>Login</h2>
+    <form onSubmit={handleSignIn}>
+      <label htmlFor="email">Username (Email):</label>
+      <input
+        type="email"
+        id="email"
+        name="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+
+      <label htmlFor="password">Password:</label>
+      <input
+        type="password"
+        id="password"
+        name="password"
+        required
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+
+      <button type="submit">Sign In</button>
+
+      <h5>or sign up for a new account</h5>
+
+      <button type="button" onClick={handleSignUp}>
+        Sign Up
+      </button>
+
+      {error && <p id="message">{error}</p>}
+    </form>
+  </div>
+</div>
+
+);
+
 }
 
 export default Login;
