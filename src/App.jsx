@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react"; // ✅ useRef added
 import Login from "./Login";
 import axios from "axios";
 import { jsPDF } from "jspdf";
@@ -22,7 +22,8 @@ function App() {
   const [feedbackGiven, setFeedbackGiven] = useState({});
   const { transcript, resetTranscript, listening: micListening } = useSpeechRecognition();
 
-  // Dummy data for doctors and bed availability
+  const messagesEndRef = useRef(null); // ✅ ref to auto-scroll
+
   const doctors = [
     { id: 1, name: "Dr. John Smith", specialization: "General Physician", availableSlots: ["10:00 AM", "11:00 AM", "2:00 PM"] },
     { id: 2, name: "Dr. Sarah Johnson", specialization: "Cardiologist", availableSlots: ["9:00 AM", "1:00 PM", "3:00 PM"] },
@@ -42,11 +43,20 @@ function App() {
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
 
+  const specializations = [...new Set(doctors.map(doc => doc.specialization))];
+
   useEffect(() => {
     if (!micListening && transcript) {
       setInput(transcript);
     }
   }, [micListening, transcript]);
+
+  useEffect(() => {
+    // ✅ Auto-scroll when messages update
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   if (!isLoggedIn) {
     return <Login onLogin={() => setIsLoggedIn(true)} />;
@@ -67,117 +77,75 @@ function App() {
   };
 
   const isHealthRelated = (text) => {
-    const keywords = [
-      "health", "doctor", "medical", "medicine", "treatment", "diagnosis", "hospital", "clinic",
-      "fever", "cold", "cough", "headache", "pain", "infection", "symptom", "disease", "flu", "covid",
-      "cancer", "asthma", "vomit", "nausea", "diarrhea", "malaria", "dengue", "bp", "blood pressure",
-      "diabetes", "tablet", "medication", "antibiotic", "surgery", "injury", "fracture", "strain",
-      "stomach", "skin", "rash", "itch", "chest", "body", "wound", "burn", "bone", "muscle", "joint",
-      "eye", "ear", "nose", "throat", "leg", "arm", "hand", "back", "neck", "hip", "knee", "shoulder",
-      "foot", "feet", "tooth", "teeth", "gum", "spine", "rib", "pelvis", "ankle", "elbow",
-      "swelling", "fatigue", "weakness", "urine", "heartbeat", "period", "pregnancy", "mental",
-      "stress", "anxiety", "depression", "allergy", "dizzy", "blurred vision", "cramp",
-      "appointment", "book", "consult", "bed", "availability", "admission"
-    ];
-    const lower = text.toLowerCase();
-    return keywords.some((keyword) => lower.includes(keyword));
-  };
-
-  const checkBedAvailability = () => {
-    const response = `🏥 Bed Availability Status:
-    - General Ward: ${bedAvailability.generalWard.available}/${bedAvailability.generalWard.total} available
-    - ICU: ${bedAvailability.icu.available}/${bedAvailability.icu.total} available
-    - Private Room: ${bedAvailability.privateRoom.available}/${bedAvailability.privateRoom.total} available
-    - Emergency: ${bedAvailability.emergency.available}/${bedAvailability.emergency.total} available`;
-    setMessages((prev) => [...prev, { role: "assistant", content: response }]);
-  };
-
-  const initiateBooking = (symptoms) => {
-    // Suggest doctor based on symptoms
-    let suggestedDoctor = doctors[0]; // Default to General Physician
-    if (symptoms.toLowerCase().includes("heart") || symptoms.toLowerCase().includes("chest")) {
-      suggestedDoctor = doctors.find(doc => doc.specialization === "Cardiologist") || doctors[0];
-    } else if (symptoms.toLowerCase().includes("bone") || symptoms.toLowerCase().includes("joint")) {
-      suggestedDoctor = doctors.find(doc => doc.specialization === "Orthopedist") || doctors[0];
-    } else if (symptoms.toLowerCase().includes("headache") || symptoms.toLowerCase().includes("seizure")) {
-      suggestedDoctor = doctors.find(doc => doc.specialization === "Neurologist") || doctors[0];
-    }
-
-    setSelectedDoctor(suggestedDoctor);
-    setBookingStage("selectDoctor");
-    const response = `Based on your symptoms, I recommend consulting ${suggestedDoctor.name} (${suggestedDoctor.specialization}). Would you like to:
-    1. Book with ${suggestedDoctor.name}
-    2. See other available doctors
-    3. Cancel booking`;
-    setMessages((prev) => [...prev, { role: "assistant", content: response }]);
+    const keywords = ["health", "doctor", "medical", "medicine", "treatment", "diagnosis", "hospital", "clinic", "fever", "cold", "cough", "headache", "pain", "infection", "symptom", "disease", "flu", "covid", "cancer", "asthma", "vomit", "nausea", "diarrhea", "malaria", "dengue", "bp", "blood pressure", "diabetes", "tablet", "medication", "antibiotic", "surgery", "injury", "fracture", "strain", "stomach", "skin", "rash", "itch", "chest", "body", "wound", "burn", "bone", "muscle", "joint", "eye", "ear", "nose", "throat", "leg", "arm", "hand", "back", "neck", "hip", "knee", "shoulder", "foot", "feet", "tooth", "teeth", "gum", "spine", "rib", "pelvis", "ankle", "elbow", "swelling", "fatigue", "weakness", "urine", "heartbeat", "period", "pregnancy", "mental", "stress", "anxiety", "depression", "allergy", "dizzy", "blurred vision", "cramp", "appointment", "book", "consult", "bed", "availability", "admission"];
+    return keywords.some((kw) => text.toLowerCase().includes(kw));
   };
 
   const handleBookingResponse = (userInput) => {
-    if (bookingStage === "selectDoctor") {
-      if (userInput.includes("1") || userInput.toLowerCase().includes("book")) {
-        setBookingStage("selectSlot");
-        const response = `Available slots for ${selectedDoctor.name} today:
-        ${selectedDoctor.availableSlots.map((slot, i) => `${i + 1}. ${slot}`).join("\n")}
-        Please select a slot number or type "cancel" to abort.`;
-        setMessages((prev) => [...prev, { role: "assistant", content: response }]);
-      } else if (userInput.includes("2") || userInput.toLowerCase().includes("other")) {
-        const response = `Available doctors:
-        ${doctors.map((doc, i) => `${i + 1}. ${doc.name} (${doc.specialization})`).join("\n")}
-        Please select a doctor number or type "cancel" to abort.`;
-        setBookingStage("chooseOtherDoctor");
-        setMessages((prev) => [...prev, { role: "assistant", content: response }]);
-      } else {
-        setBookingStage(null);
-        setSelectedDoctor(null);
-        setMessages((prev) => [...prev, { role: "assistant", content: "Booking cancelled. How else can I assist you?" }]);
-      }
-    } else if (bookingStage === "chooseOtherDoctor") {
+    if (bookingStage === "selectCategory") {
       const choice = parseInt(userInput);
-      if (!isNaN(choice) && choice > 0 && choice <= doctors.length) {
-        setSelectedDoctor(doctors[choice - 1]);
-        setBookingStage("selectSlot");
-        const response = `Available slots for ${doctors[choice - 1].name} today:
-        ${doctors[choice - 1].availableSlots.map((slot, i) => `${i + 1}. ${slot}`).join("\n")}
-        Please select a slot number or type "cancel" to abort.`;
-        setMessages((prev) => [...prev, { role: "assistant", content: response }]);
-      } else if (userInput.toLowerCase().includes("cancel")) {
-        setBookingStage(null);
-        setSelectedDoctor(null);
-        setMessages((prev) => [...prev, { role: "assistant", content: "Booking cancelled. How else can I assist you?" }]);
+      if (!isNaN(choice) && choice > 0 && choice <= specializations.length) {
+        const category = specializations[choice - 1];
+        const availableDoctors = doctors.filter(doc => doc.specialization === category);
+        setBookingStage("selectDoctorFromCategory");
+        setSelectedDoctor({ category, list: availableDoctors });
+
+        const response = `Available doctors in ${category}:\n${availableDoctors
+          .map((doc, i) => `${i + 1}. ${doc.name}`)
+          .join("\n")}\nPlease select a doctor number or type "cancel" to abort.`;
+        setMessages(prev => [...prev, { role: "assistant", content: response }]);
       } else {
-        setMessages((prev) => [...prev, { role: "assistant", content: "Invalid choice. Please select a valid doctor number or type 'cancel'." }]);
+        setMessages(prev => [...prev, { role: "assistant", content: "Invalid category. Please choose a valid number." }]);
+      }
+    } else if (bookingStage === "selectDoctorFromCategory") {
+      const choice = parseInt(userInput);
+      const doctorList = selectedDoctor.list;
+      if (!isNaN(choice) && choice > 0 && choice <= doctorList.length) {
+        const chosen = doctorList[choice - 1];
+        setSelectedDoctor(chosen);
+        setBookingStage("selectSlot");
+
+        const response = `Available slots for ${chosen.name}:\n${chosen.availableSlots
+          .map((slot, i) => `${i + 1}. ${slot}`)
+          .join("\n")}\nPlease choose a slot or type "cancel".`;
+        setMessages(prev => [...prev, { role: "assistant", content: response }]);
+      } else {
+        setMessages(prev => [...prev, { role: "assistant", content: "Invalid doctor. Please pick a valid number." }]);
       }
     } else if (bookingStage === "selectSlot") {
       const choice = parseInt(userInput);
-      if (!isNaN(choice) && choice > 0 && choice <= selectedDoctor.availableSlots.length) {
-        setSelectedSlot(selectedDoctor.availableSlots[choice - 1]);
+      if (!isNaN(choice) && selectedDoctor?.availableSlots?.[choice - 1]) {
+        const slot = selectedDoctor.availableSlots[choice - 1];
         const appointment = {
           id: appointments.length + 1,
           doctor: selectedDoctor.name,
           specialization: selectedDoctor.specialization,
-          slot: selectedDoctor.availableSlots[choice - 1],
+          slot,
           date: new Date().toLocaleDateString(),
         };
         setAppointments([...appointments, appointment]);
         setBookingStage(null);
         setSelectedDoctor(null);
         setSelectedSlot(null);
-        const response = `✅ Appointment booked successfully!
-        Appointment Details:
-        - Doctor: ${appointment.doctor}
-        - Specialization: ${appointment.specialization}
-        - Date: ${appointment.date}
-        - Time: ${appointment.slot}
-        Please arrive 15 minutes early. How else can I assist you?`;
-        setMessages((prev) => [...prev, { role: "assistant", content: response }]);
+
+        const response = `✅ Appointment booked successfully!\n\n📋 Appointment Details:\n- Doctor: ${appointment.doctor}\n- Specialization: ${appointment.specialization}\n- Date: ${appointment.date}\n- Time: ${appointment.slot}\n\nPlease arrive 15 minutes early. Anything else I can help you with?`;
+        setMessages(prev => [...prev, { role: "assistant", content: response }]);
       } else if (userInput.toLowerCase().includes("cancel")) {
         setBookingStage(null);
         setSelectedDoctor(null);
-        setMessages((prev) => [...prev, { role: "assistant", content: "Booking cancelled. How else can I assist you?" }]);
+        setMessages(prev => [...prev, { role: "assistant", content: "Booking cancelled. How else can I assist you?" }]);
       } else {
-        setMessages((prev) => [...prev, { role: "assistant", content: "Invalid slot choice. Please select a valid slot number or type 'cancel'." }]);
+        setMessages(prev => [...prev, { role: "assistant", content: "Invalid slot. Please choose a valid number or type 'cancel'." }]);
       }
     }
+  };
+
+  const initiateBooking = () => {
+    setBookingStage("selectCategory");
+    const response = `Please choose a medical category:\n${specializations
+      .map((cat, i) => `${i + 1}. ${cat}`)
+      .join("\n")}\n(Type the category number to continue)`;
+    setMessages(prev => [...prev, { role: "assistant", content: response }]);
   };
 
   const handleSend = async () => {
@@ -194,32 +162,32 @@ function App() {
     }
 
     if (!isHealthRelated(input)) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "⚠️ I am only able to help with health-related queries, appointment booking, or bed availability. Please ask a relevant question.",
-        },
-      ]);
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: "⚠️ I am only able to help with health-related queries, appointment booking, or bed availability. Please ask a relevant question."
+      }]);
       return;
     }
 
     if (input.toLowerCase().includes("bed") || input.toLowerCase().includes("availability")) {
-      checkBedAvailability();
+      const response = `🏥 Bed Availability Status:
+- General Ward: ${bedAvailability.generalWard.available}/${bedAvailability.generalWard.total} available
+- ICU: ${bedAvailability.icu.available}/${bedAvailability.icu.total} available
+- Private Room: ${bedAvailability.privateRoom.available}/${bedAvailability.privateRoom.total} available
+- Emergency: ${bedAvailability.emergency.available}/${bedAvailability.emergency.total} available`;
+      setMessages((prev) => [...prev, { role: "assistant", content: response }]);
       return;
     }
 
     if (input.toLowerCase().includes("appointment") || input.toLowerCase().includes("book") || input.toLowerCase().includes("consult")) {
-      initiateBooking(input);
+      initiateBooking();
       return;
     }
 
     const chatHistory = [
       {
         role: "system",
-        content:
-          "You are a helpful medical assistant. Provide ethical, accurate responses. Do not prescribe medicine. Use bullet points when explaining.",
+        content: "You are a helpful medical assistant. Provide ethical, accurate responses. Do not prescribe medicine. Use bullet points when explaining.",
       },
       ...messages,
       userMessage,
@@ -241,16 +209,12 @@ function App() {
         }
       );
 
-      const reply =
-        res.data.choices[0].message.content +
+      const reply = res.data.choices[0].message.content +
         "\n\n⚠️ This is general information. Consult a licensed doctor for medical advice.\nWould you like to book an appointment for this issue?";
       setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
     } catch (err) {
       console.error("Error:", err);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "❌ Failed to get response. Please try again." },
-      ]);
+      setMessages((prev) => [...prev, { role: "assistant", content: "❌ Failed to get response. Please try again." }]);
     }
   };
 
@@ -314,7 +278,7 @@ function App() {
   return (
     <div className={`chat-container ${darkMode ? "dark" : ""}`}>
       <div className="header">
-        <h1 className="chat-title ">👩‍⚕️ MediCare Assistant</h1>
+        <h1 className="chat-title">👩‍⚕️ MediCare Assistant</h1>
         <button className="dark-mode-toggle" onClick={toggleDarkMode}>
           {darkMode ? "☀️ Light" : "🌙 Dark"}
         </button>
@@ -355,6 +319,7 @@ function App() {
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} /> {/* ✅ Auto-scroll anchor */}
       </div>
 
       <div className="input-wrapper">
